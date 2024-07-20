@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Touch Breaker</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #1a1a1a;
+            font-family: Arial, sans-serif;
+        }
+        #gameCanvas {
+            border: 2px solid #fff;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="320" height="352"></canvas>
+
+    <script>
+        const GRID_WIDTH = 10;
+        const GRID_HEIGHT = 11;
+        const CELL_SIZE = 32;
+        const CANVAS_WIDTH = GRID_WIDTH * CELL_SIZE;
+        const CANVAS_HEIGHT = GRID_HEIGHT * CELL_SIZE;
+
+        let canvas, ctx;
+        let player = { x: 0, y: 0 };
+        let blocks = [];
+        let currentStep = 1;
+        let gameState = 'playing';
+
+        const stageData = [
+            { data: "0002A80A00A00A00A00A00A02A8000", x: 1, y: 11 },
+            { data: "048040000000444444000000040240", x: 10, y: 11 },
+            { data: "0000000A03B80000003B80A0000000", x: 5, y: 6 },
+            { data: "00008010088000008001E00240A000", x: 3, y: 5 },
+            { data: "0000002081F01101101F0208000000", x: 6, y: 7 },
+            { data: "000000010108010000100200110000", x: 10, y: 11 },
+            { data: "F1C80C00C1C00060061C000C80CF1C", x: 5, y: 1 },
+            { data: "8044080000000400C0020000414800", x: 1, y: 9 },
+            { data: "100094202000900010110400000004", x: 5, y: 11 },
+            { data: "134220420880200000080108000000", x: 1, y: 11 },
+            { data: "022400800824020000000102000000", x: 6, y: 1 },
+            { data: "000000084008300300008084000000", x: 10, y: 11 }
+        ];
+
+        function init() {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+            canvas.width = CANVAS_WIDTH;
+            canvas.height = CANVAS_HEIGHT;
+            loadStage(currentStep);
+            document.addEventListener('keydown', handleKeyDown);
+            gameLoop();
+        }
+
+        function loadStage(step) {
+            const stage = stageData[step - 1];
+            blocks = [];
+            for (let col = 0; col < 10; col++) {
+                const colData = stage.data.substr(col * 3, 3);
+                const colBits = parseInt(colData, 16).toString(2).padStart(12, '0').slice(0, 11);
+                for (let row = 0; row < 11; row++) {
+                    if (colBits[row] === '1') {
+                        blocks.push({ x: col, y: row, state: 'normal' });
+                    }
+                }
+            }
+            // 主人公の初期位置を設定（1,1が左上）
+            player = { x: stage.x - 1, y: stage.y - 1 };
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function update() {
+            blocks.forEach(block => {
+                if (isPlayerTouching(block)) {
+                    block.state = 'gray';
+                } else if (block.state === 'gray') {
+                    block.state = 'destroyed';
+                }
+            });
+
+            blocks = blocks.filter(block => block.state !== 'destroyed');
+
+            if (blocks.length === 0) {
+                if (currentStep < 12) {
+                    currentStep++;
+                    loadStage(currentStep);
+                } else {
+                    gameState = 'allClear';
+                }
+            }
+        }
+
+        function draw() {
+            ctx.fillStyle = '#000080';
+            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+            blocks.forEach(block => {
+                ctx.fillStyle = block.state === 'normal' ? '#8B4513' : '#808080';
+                ctx.fillRect(block.x * CELL_SIZE, block.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+            });
+
+            ctx.fillStyle = '#FFFF00';
+            ctx.beginPath();
+            ctx.arc(player.x * CELL_SIZE + CELL_SIZE / 2, player.y * CELL_SIZE + CELL_SIZE / 2, CELL_SIZE / 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '12px Arial';
+            ctx.fillText(`STEP: ${currentStep}`, 10, 20);
+
+            if (gameState === 'allClear') {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = '24px Arial';
+                ctx.fillText('All Stages Clear!', CANVAS_WIDTH / 2 - 80, CANVAS_HEIGHT / 2);
+            }
+        }
+
+        function handleKeyDown(e) {
+            if (gameState === 'allClear') return;
+
+            let dx = 0, dy = 0;
+            switch (e.code) {
+                case 'ArrowLeft': dx = -1; break;
+                case 'ArrowRight': dx = 1; break;
+                case 'ArrowUp': dy = -1; break;
+                case 'ArrowDown': dy = 1; break;
+                default: return;
+            }
+            
+            const newX = player.x + dx;
+            const newY = player.y + dy;
+            const blockAtNewPos = blocks.find(block => block.x === newX && block.y === newY);
+
+            if (blockAtNewPos && canPushBlock(dx, dy)) {
+                pushBlock(blockAtNewPos, dx, dy);
+            } else if (canMove(dx, dy)) {
+                player.x = newX;
+                player.y = newY;
+            }
+        }
+
+        function canMove(dx, dy) {
+            const newX = player.x + dx;
+            const newY = player.y + dy;
+
+            if (newX < 0 || newX >= GRID_WIDTH || newY < 0 || newY >= GRID_HEIGHT) {
+                return false;
+            }
+
+            if (blocks.some(block => block.x === newX && block.y === newY)) {
+                return false;
+            }
+
+            const checkPositions = [];
+            if (dx !== 0) {
+                checkPositions.push({x: player.x, y: player.y - 1});
+                checkPositions.push({x: player.x, y: player.y + 1});
+                checkPositions.push({x: newX, y: newY - 1});
+                checkPositions.push({x: newX, y: newY + 1});
+            } else {
+                checkPositions.push({x: player.x - 1, y: player.y});
+                checkPositions.push({x: player.x + 1, y: player.y});
+                checkPositions.push({x: newX - 1, y: newY});
+                checkPositions.push({x: newX + 1, y: newY});
+            }
+
+            return checkPositions.some(pos => 
+                pos.x < 0 || pos.x >= GRID_WIDTH || pos.y < 0 || pos.y >= GRID_HEIGHT ||
+                blocks.some(block => block.x === pos.x && block.y === pos.y)
+            );
+        }
+
+        function canPushBlock(dx, dy) {
+            const newX = player.x + dx;
+            const newY = player.y + dy;
+            const newBlockX = newX + dx;
+            const newBlockY = newY + dy;
+
+            if (newBlockX < 0 || newBlockX >= GRID_WIDTH || newBlockY < 0 || newBlockY >= GRID_HEIGHT ||
+                blocks.some(block => block.x === newBlockX && block.y === newBlockY)) {
+                return false;
+            }
+
+            const checkPositions = [];
+            if (dx !== 0) {
+                checkPositions.push({x: player.x, y: player.y - 1});
+                checkPositions.push({x: player.x, y: player.y + 1});
+                checkPositions.push({x: newX, y: newY - 1});
+                checkPositions.push({x: newX, y: newY + 1});
+            } else {
+                checkPositions.push({x: player.x - 1, y: player.y});
+                checkPositions.push({x: player.x + 1, y: player.y});
+                checkPositions.push({x: newX - 1, y: newY});
+                checkPositions.push({x: newX + 1, y: newY});
+            }
+
+            return checkPositions.some(pos => 
+                pos.x < 0 || pos.x >= GRID_WIDTH || pos.y < 0 || pos.y >= GRID_HEIGHT ||
+                blocks.some(block => block.x === pos.x && block.y === pos.y)
+            );
+        }
+
+        function pushBlock(block, dx, dy) {
+            const newBlockX = block.x + dx;
+            const newBlockY = block.y + dy;
+
+            if (newBlockX >= 0 && newBlockX < GRID_WIDTH && newBlockY >= 0 && newBlockY < GRID_HEIGHT &&
+                !blocks.some(b => b.x === newBlockX && b.y === newBlockY)) {
+                block.x = newBlockX;
+                block.y = newBlockY;
+                player.x += dx;
+                player.y += dy;
+            }
+        }
+
+        function isPlayerTouching(block) {
+            return Math.abs(player.x - block.x) <= 1 && Math.abs(player.y - block.y) <= 1;
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
