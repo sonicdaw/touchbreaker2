@@ -182,6 +182,12 @@
         function handleKeyDown(e) {
             if (gameState === 'allClear') return;
 
+            if (e.code === 'KeyR') {
+                // Rキーが押されたらステージをリセット
+                loadStage(currentStep);
+                return;
+            }
+
             let dx = 0, dy = 0;
             switch (e.code) {
                 case 'ArrowLeft': dx = -1; break;
