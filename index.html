@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Debugger: Cyber Crisis</title>
+    <title>Touch Breaker in WorldWide SystemDown</title>
     <style>
         body {
             display: flex;
@@ -35,11 +35,13 @@
         let blocks = [];
         let bigBugs = [];
         let currentStep = 1;
-        let gameState = 'playing';
+        let gameState = 'tutorial';
         let cursorBlinkState = true;
         let lastBlinkTime = 0;
+        let tutorialStep = 0;
 
         const stageData = [
+            { data: "000600000000000000000000600000", x: 1, y: 11 },
             { data: "0002A80A00A00A00A00A00A02A8000", x: 1, y: 11 },
             { data: "048040000000444444000000040240", x: 10, y: 11 },
             { data: "0000000A03B80000003B80A0000000", x: 5, y: 6 },
@@ -52,6 +54,16 @@
             { data: "134220420880200000080108000000", x: 1, y: 11 },
             { data: "022400800824020000000102000000", x: 6, y: 1 },
             { data: "000000084008300300008084000000", x: 10, y: 11 }
+        ];
+
+        const tutorialMessages = [
+            "壁、バグにそって移動できます",
+            "バグに触れると、選択状態になります",
+            "離れると、削除して駆除できます",
+            "全てのバグを削除してクリアしましょう",
+            "バグは押すこともできます",
+            "押すバグ以外で移動できる場所だけ",
+            "中央のバグを押して移動しながら消していこう"
         ];
 
         function init() {
@@ -96,22 +108,45 @@
         }
 
         function update(timestamp) {
+            if (gameState === 'tutorial') {
+                if (tutorialStep > tutorialMessages.length) {
+                    gameState = 'playing';
+                }
+            }
             blocks.forEach(block => {
                 if (isPlayerTouching(block)) {
                     block.state = 'selected';
                     const touchedBug = bigBugs.find(bug => bug.x === block.x && block.y === block.y);
-                    if (touchedBug) touchedBug.found = true;
+                    if (touchedBug) {
+                        touchedBug.found = true;
+                        if(tutorialStep==0)tutorialStep=1;
+                    }
                 } else if (block.state === 'selected') {
                     block.state = 'destroyed';
+                    if(tutorialStep==1)tutorialStep=2;
                 }
             });
 
             blocks = blocks.filter(block => block.state !== 'destroyed');
+            if(blocks.length === 2){
+                if(tutorialStep==2)tutorialStep=3;
+            }
+            if(blocks.length < 11){
+                if(tutorialStep==5)tutorialStep=6;
+            }
 
-            if (blocks.length === 0 || bigBugs.every(bug => bug.found)) {
+            if (blocks.length === 0) {
                 if (currentStep < 12) {
                     currentStep++;
                     loadStage(currentStep);
+                    if(currentStep===3){
+                        if(tutorialStep==3)tutorialStep=4;
+                    }
+                    if(currentStep===4){
+                        if (gameState === 'tutorial') {
+                            gameState = 'playing';
+                        }
+                    }
                 } else {
                     gameState = 'allClear';
                 }
@@ -177,6 +212,16 @@
                 ctx.font = '24px Courier';
                 ctx.fillText('All Modules Debugged!', CANVAS_WIDTH / 2 - 150, CANVAS_HEIGHT / 2);
             }
+
+            if (gameState === 'tutorial' && currentStep != 2) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(0, CANVAS_HEIGHT / 2 - 60, CANVAS_WIDTH, 60);
+                ctx.fillStyle = '#0f0';
+                ctx.font = '14px Courier';
+                ctx.textAlign = 'center';
+                ctx.fillText(tutorialMessages[tutorialStep], CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 30);
+                ctx.textAlign = 'left';
+            }
         }
 
         function handleKeyDown(e) {
@@ -203,6 +248,7 @@
 
             if (blockAtNewPos && canPushBlock(dx, dy)) {
                 pushBlock(blockAtNewPos, dx, dy);
+                if(tutorialStep==4)tutorialStep=5;
             } else if (canMove(dx, dy)) {
                 player.x = newX;
                 player.y = newY;
