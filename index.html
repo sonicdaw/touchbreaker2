@@ -7,6 +7,7 @@
     <style>
         body {
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
@@ -17,11 +18,21 @@
         }
         #gameCanvas {
             border: 2px solid #0f0;
+            touch-action: none;
+        }
+        #retryButton {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #001a1a;
+            color: #0f0;
+            border: 1px solid #0f0;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
     <canvas id="gameCanvas" width="384" height="416"></canvas>
+    <button id="retryButton">Retry</button>
 
     <script>
         const GRID_WIDTH = 10;
@@ -39,6 +50,7 @@
         let cursorBlinkState = true;
         let lastBlinkTime = 0;
         let tutorialStep = 0;
+        let touchStartX, touchStartY;
 
         const stageData = [
             { data: "000600000000000000000000600000", x: 1, y: 11 },
@@ -73,6 +85,11 @@
             canvas.height = CANVAS_HEIGHT;
             loadStage(currentStep);
             document.addEventListener('keydown', handleKeyDown);
+
+            canvas.addEventListener('touchstart', handleTouchStart, false);
+            canvas.addEventListener('touchend', handleTouchEnd, false);
+
+            document.getElementById('retryButton').addEventListener('click', retryStage);
             gameLoop();
         }
 
@@ -224,6 +241,39 @@
             }
         }
 
+        function handleTouchStart(e) {
+            e.preventDefault();
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }
+
+        function handleTouchEnd(e) {
+            e.preventDefault();
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+
+            const dx = touchEndX - touchStartX;
+            const dy = touchEndY - touchStartY;
+
+            if (Math.abs(dx) > Math.abs(dy)) {
+                if (dx > 0) {
+                    movePlayer(1, 0);
+                } else {
+                    movePlayer(-1, 0);
+                }
+            } else {
+                if (dy > 0) {
+                    movePlayer(0, 1);
+                } else {
+                    movePlayer(0, -1);
+                }
+            }
+        }
+
+        function retryStage() {
+            loadStage(currentStep);
+        }
+
         function handleKeyDown(e) {
             if (gameState === 'allClear') return;
 
@@ -241,7 +291,13 @@
                 case 'ArrowDown': dy = 1; break;
                 default: return;
             }
-            
+
+            movePlayer(dx, dy);
+        }
+
+        function movePlayer(dx, dy) {
+            if (gameState === 'allClear') return;
+
             const newX = player.x + dx;
             const newY = player.y + dy;
             const blockAtNewPos = blocks.find(block => block.x === newX && block.y === newY);
