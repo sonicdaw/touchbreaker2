@@ -52,6 +52,8 @@
         let tutorialStep = 0;
         let touchStartX, touchStartY;
         let explosions = [];
+        let npePauseTimer = 0;
+        let npeToExplode = null;
 
         const stageData = [
             { data: "000600000000000000000000600000", x: 1, y: 11 },
@@ -126,6 +128,18 @@
         }
 
         function update(timestamp) {
+            if (npePauseTimer > 0) {
+                npePauseTimer -= 1000 / 60; // Assuming 60 FPS
+                if (npePauseTimer <= 0) {
+                    npePauseTimer = 0;
+                    if (npeToExplode) {
+                        explodeNPE(npeToExplode);
+                        npeToExplode = null;
+                    }
+                }
+                return; // Skip other updates during pause
+            }
+
             if (gameState === 'tutorial') {
                 if (tutorialStep > tutorialMessages.length) {
                     gameState = 'playing';
@@ -139,7 +153,7 @@
                 if(tutorialStep==5)tutorialStep=6;
             }
 
-            if (blocks.length === 0) {
+            if (blocks.length === 0 && npePauseTimer === 0) {
                 if (currentStep < 12) {
                     currentStep++;
                     loadStage(currentStep);
@@ -152,8 +166,13 @@
                         }
                     }
                 } else {
-                    gameState = 'allClear';
+                    gameState = 'beforeallClear';
+                    npes.forEach(npe => explodeNPE(npe));
                 }
+            }
+
+            if (explosions.length === 0 && gameState === 'beforeallClear') {
+                gameState = 'allClear';
             }
 
             // カーソルの点滅を更新
@@ -175,17 +194,22 @@
                 } else if (block.state === 'selected') {
                     block.state = 'destroyed';
                     if(tutorialStep==1) tutorialStep=2;
-                    const touchedNPE = npes.find(npe => npe.x === block.x && block.y === block.y);
+                    const touchedNPE = npes.find(npe => npe.x === block.x && npe.y === block.y);
                     if (touchedNPE && !touchedNPE.found) {
                         touchedNPE.found = true;
-                        explosions.push({
-                            x: (block.x + 1) * CELL_SIZE + CELL_SIZE / 2,
-                            y: (block.y + 1) * CELL_SIZE + CELL_SIZE / 2,
-                            radius: 0,
-                            duration: 60
-                        });
+                        npePauseTimer = 1000; // 1 second pause
+                        npeToExplode = touchedNPE;
                     }
                 }
+            });
+        }
+
+        function explodeNPE(npe) {
+            explosions.push({
+                x: (npe.x + 1) * CELL_SIZE + CELL_SIZE / 2,
+                y: (npe.y + 1) * CELL_SIZE + CELL_SIZE / 2,
+                radius: 0,
+                duration: 30
             });
         }
 
@@ -241,6 +265,17 @@
                 ctx.fill();
                 explosion.radius += (60 - explosion.duration) / 2;
             });
+
+            // Draw NPE during pause
+            if (npePauseTimer > 0 && npeToExplode) {
+                ctx.beginPath();
+                ctx.arc((npeToExplode.x + 1) * CELL_SIZE + CELL_SIZE / 2 , (npeToExplode.y + 1) * CELL_SIZE + CELL_SIZE / 2, 13, 0, Math.PI * 2);
+                ctx.strokeStyle = '#f00';
+                ctx.stroke();
+                ctx.fillStyle = '#f00';
+                ctx.font = '10px Courier';
+                ctx.fillText('NPE', (npeToExplode.x + 1) * CELL_SIZE + 7, (npeToExplode.y + 1) * CELL_SIZE + CELL_SIZE / 2 + 3);
+            }
 
             // ステージ情報
             ctx.fillStyle = '#0f0';
@@ -321,7 +356,7 @@
         }
 
         function movePlayer(dx, dy) {
-            if (gameState === 'allClear') return;
+            if (gameState === 'allClear' || npePauseTimer != 0) return;
 
             const newX = player.x + dx;
             const newY = player.y + dy;
