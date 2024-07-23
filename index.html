@@ -44,13 +44,14 @@
         let canvas, ctx;
         let player = { x: 0, y: 0 };
         let blocks = [];
-        let bigBugs = [];
+        let npes = [];
         let currentStep = 1;
         let gameState = 'tutorial';
         let cursorBlinkState = true;
         let lastBlinkTime = 0;
         let tutorialStep = 0;
         let touchStartX, touchStartY;
+        let explosions = [];
 
         const stageData = [
             { data: "000600000000000000000000600000", x: 1, y: 11 },
@@ -96,7 +97,7 @@
         function loadStage(step) {
             const stage = stageData[step - 1];
             blocks = [];
-            bigBugs = [];
+            npes = [];
             for (let col = 0; col < 10; col++) {
                 const colData = stage.data.substr(col * 3, 3);
                 const colBits = parseInt(colData, 16).toString(2).padStart(12, '0').slice(0, 11);
@@ -113,8 +114,8 @@
                 let randomBlock;
                 do {
                     randomBlock = blocks[Math.floor(Math.random() * blocks.length)];
-                } while (bigBugs.some(bug => bug.x === randomBlock.x && bug.y === randomBlock.y));
-                bigBugs.push({ x: randomBlock.x, y: randomBlock.y, found: false });
+                } while (npes.some(bug => bug.x === randomBlock.x && bug.y === randomBlock.y));
+                npes.push({ x: randomBlock.x, y: randomBlock.y, found: false });
             }
         }
 
@@ -130,20 +131,6 @@
                     gameState = 'playing';
                 }
             }
-            blocks.forEach(block => {
-                if (isPlayerTouching(block)) {
-                    block.state = 'selected';
-                    const touchedBug = bigBugs.find(bug => bug.x === block.x && block.y === block.y);
-                    if (touchedBug) {
-                        touchedBug.found = true;
-                        if(tutorialStep==0)tutorialStep=1;
-                    }
-                } else if (block.state === 'selected') {
-                    block.state = 'destroyed';
-                    if(tutorialStep==1)tutorialStep=2;
-                }
-            });
-
             blocks = blocks.filter(block => block.state !== 'destroyed');
             if(blocks.length === 2){
                 if(tutorialStep==2)tutorialStep=3;
@@ -174,6 +161,32 @@
                 cursorBlinkState = !cursorBlinkState;
                 lastBlinkTime = timestamp;
             }
+
+            // Update explosions
+            explosions = explosions.filter(explosion => {
+                explosion.duration--;
+                return explosion.duration > 0;
+            });
+
+            blocks.forEach(block => {
+                if (isPlayerTouching(block)) {
+                    block.state = 'selected';
+                    if(tutorialStep==0) tutorialStep=1;
+                } else if (block.state === 'selected') {
+                    block.state = 'destroyed';
+                    if(tutorialStep==1) tutorialStep=2;
+                    const touchedNPE = npes.find(npe => npe.x === block.x && block.y === block.y);
+                    if (touchedNPE && !touchedNPE.found) {
+                        touchedNPE.found = true;
+                        explosions.push({
+                            x: (block.x + 1) * CELL_SIZE + CELL_SIZE / 2,
+                            y: (block.y + 1) * CELL_SIZE + CELL_SIZE / 2,
+                            radius: 0,
+                            duration: 60
+                        });
+                    }
+                }
+            });
         }
 
         function draw() {
@@ -205,16 +218,28 @@
                 ctx.fillRect(playerX, playerY, CELL_SIZE, CELL_SIZE);
             }
 
-            // ビッグバグの表示
-            bigBugs.forEach((bug, index) => {
+            // Draw NPEs
+            npes.forEach((npe, index) => {
                 ctx.beginPath();
-                ctx.arc(CANVAS_WIDTH - 20 - index * 30, 20, 10, 0, Math.PI * 2);
+                ctx.arc(CANVAS_WIDTH - 20 - index * 30, 17, 13, 0, Math.PI * 2);
                 ctx.strokeStyle = '#f00';
                 ctx.stroke();
-                if (bug.found) {
+                if (npe.found) {
                     ctx.fillStyle = '#f00';
                     ctx.fill();
                 }
+                ctx.fillStyle = '#f00';
+                ctx.font = '10px Courier';
+                ctx.fillText('NPE', CANVAS_WIDTH - 28 - index * 30, 20);
+            });
+
+            // Draw explosions
+            explosions.forEach(explosion => {
+                ctx.beginPath();
+                ctx.arc(explosion.x, explosion.y, explosion.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 0, 0, ${explosion.duration / 60})`;
+                ctx.fill();
+                explosion.radius += (60 - explosion.duration) / 2;
             });
 
             // ステージ情報
