@@ -28,9 +28,23 @@
             border: 1px solid #0f0;
             cursor: pointer;
         }
+        #gameTitle {
+            font-size: 24px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        #gameTitle .subtitle {
+            font-size: 14px;
+            display: block;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
+    <div id="gameTitle">
+        Touch Breaker
+        <span class="subtitle">WorldWide System Down</span>
+    </div>
     <canvas id="gameCanvas" width="384" height="416"></canvas>
     <button id="retryButton">Retry</button>
 
