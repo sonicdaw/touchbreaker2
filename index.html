@@ -299,6 +299,40 @@
                 ctx.fillText(tutorialMessages[tutorialStep], CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 30);
                 ctx.textAlign = 'left';
             }
+
+            if(currentStep > 2){
+                blocks.forEach(block => {
+                    if (isPlayerTouching(block)) {
+                        if(block.x == player.x || block.y == player.y){
+                            drawPushArrows(block);
+                        }
+                    }
+                });
+            }
+        }
+
+        function drawPushArrows(block) {
+            const directions = [
+                { dx: 1, dy: 0, arrow: '→' },
+                { dx: -1, dy: 0, arrow: '←' },
+                { dx: 0, dy: 1, arrow: '↓' },
+                { dx: 0, dy: -1, arrow: '↑' }
+            ];
+
+            ctx.fillStyle = '#ff0000';
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            directions.forEach(dir => {
+                if (block.x - player.x == dir.dx && block.y - player.y == dir.dy  && canPushBlock(dir.dx, dir.dy)) {
+                    const arrowX = (block.x + 1.5 + dir.dx * 0.5) * CELL_SIZE;
+                    const arrowY = (block.y + 1.5 + dir.dy * 0.5) * CELL_SIZE;
+                    ctx.fillText(dir.arrow, arrowX, arrowY);
+                }
+            });
+            ctx.textAlign = 'start';
+            ctx.textBaseline = 'alphabetic';
         }
 
         function handleTouchStart(e) {
@@ -408,6 +442,16 @@
             const newBlockX = newX + dx;
             const newBlockY = newY + dy;
 
+            if (newBlockX < 0 || newBlockX >= GRID_WIDTH || newBlockY < 0 || newBlockY >= GRID_HEIGHT ||
+                blocks.some(block => block.x === newBlockX && block.y === newBlockY)) {
+                return false;
+            }
+
+            // Check if there's a block at the new player position
+            const blockAtNewPos = blocks.find(block => block.x === newX && block.y === newY);
+            if (!blockAtNewPos) return false;
+
+            // Check if the new block position is valid
             if (newBlockX < 0 || newBlockX >= GRID_WIDTH || newBlockY < 0 || newBlockY >= GRID_HEIGHT ||
                 blocks.some(block => block.x === newBlockX && block.y === newBlockY)) {
                 return false;
