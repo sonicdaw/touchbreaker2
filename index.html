@@ -209,7 +209,7 @@
                     block.state = 'destroyed';
                     if(tutorialStep==1) tutorialStep=2;
                     const touchedNPE = npes.find(npe => npe.x === block.x && npe.y === block.y);
-                    if (touchedNPE && !touchedNPE.found) {
+                    if (touchedNPE && !touchedNPE.found && currentStep > 1) {
                         touchedNPE.found = true;
                         npePauseTimer = 1000; // 1 second pause
                         npeToExplode = touchedNPE;
@@ -256,21 +256,6 @@
                 ctx.fillRect(playerX, playerY, CELL_SIZE, CELL_SIZE);
             }
 
-            // Draw NPEs
-            npes.forEach((npe, index) => {
-                ctx.beginPath();
-                ctx.arc(CANVAS_WIDTH - 20 - index * 30, 17, 13, 0, Math.PI * 2);
-                ctx.strokeStyle = '#f00';
-                ctx.stroke();
-                if (npe.found) {
-                    ctx.fillStyle = '#f00';
-                    ctx.fill();
-                }
-                ctx.fillStyle = '#f00';
-                ctx.font = '10px Courier';
-                ctx.fillText('NPE', CANVAS_WIDTH - 28 - index * 30, 20);
-            });
-
             // Draw explosions
             explosions.forEach(explosion => {
                 ctx.beginPath();
@@ -312,6 +297,23 @@
                 ctx.textAlign = 'center';
                 ctx.fillText(tutorialMessages[tutorialStep], CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 30);
                 ctx.textAlign = 'left';
+            }
+
+            if(currentStep > 1){
+                // Draw NPEs
+                npes.forEach((npe, index) => {
+                    ctx.beginPath();
+                    ctx.arc(CANVAS_WIDTH - 20 - index * 30, 17, 13, 0, Math.PI * 2);
+                    ctx.strokeStyle = '#f00';
+                    ctx.stroke();
+                    if (npe.found) {
+                        ctx.fillStyle = '#f00';
+                        ctx.fill();
+                    }
+                    ctx.fillStyle = '#f00';
+                    ctx.font = '10px Courier';
+                    ctx.fillText('NPE', CANVAS_WIDTH - 28 - index * 30, 20);
+                });
             }
 
             if(currentStep > 2){
