@@ -155,16 +155,13 @@
             }
 
             if (gameState === 'tutorial') {
-                if (tutorialStep > tutorialMessages.length) {
+                if (tutorialStep >= tutorialMessages.length - 1) {
                     gameState = 'playing';
                 }
             }
             blocks = blocks.filter(block => block.state !== 'destroyed');
             if(blocks.length === 2){
-                if(tutorialStep==2)tutorialStep=3;
-            }
-            if(blocks.length < 11){
-                if(tutorialStep==5)tutorialStep=6;
+                if(tutorialStep==2)tutorialStep++;
             }
 
             if (blocks.length === 0 && npePauseTimer === 0) {
@@ -172,12 +169,7 @@
                     currentStep++;
                     loadStage(currentStep);
                     if(currentStep===3){
-                        if(tutorialStep==3)tutorialStep=4;
-                    }
-                    if(currentStep===4){
-                        if (gameState === 'tutorial') {
-                            gameState = 'playing';
-                        }
+                        if(tutorialStep==3)tutorialStep++;
                     }
                 } else {
                     gameState = 'beforeallClear';
@@ -204,10 +196,10 @@
             blocks.forEach(block => {
                 if (isPlayerTouching(block)) {
                     block.state = 'selected';
-                    if(tutorialStep==0) tutorialStep=1;
+                    if(tutorialStep==0) tutorialStep++;
                 } else if (block.state === 'selected') {
                     block.state = 'destroyed';
-                    if(tutorialStep==1) tutorialStep=2;
+                    if(tutorialStep==1) tutorialStep++;
                     const touchedNPE = npes.find(npe => npe.x === block.x && npe.y === block.y);
                     if (touchedNPE && !touchedNPE.found && currentStep > 1) {
                         touchedNPE.found = true;
@@ -414,10 +406,13 @@
 
             if (blockAtNewPos && canPushBlock(dx, dy)) {
                 pushBlock(blockAtNewPos, dx, dy);
-                if(tutorialStep==4)tutorialStep=5;
+                if(tutorialStep==4)tutorialStep++;
             } else if (canMove(dx, dy)) {
                 player.x = newX;
                 player.y = newY;
+                if(newX > 2 && newX < 7 && newY > 3 && newY < 7){
+                    if(tutorialStep==5)tutorialStep++;
+                }
             }
         }
 
