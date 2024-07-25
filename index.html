@@ -59,7 +59,7 @@
         let player = { x: 0, y: 0 };
         let blocks = [];
         let npes = [];
-        let currentStep = 1;
+        let currentStep = 0;
         let gameState = 'tutorial';
         let cursorBlinkState = true;
         let lastBlinkTime = 0;
@@ -111,7 +111,7 @@
         }
 
         function loadStage(step) {
-            const stage = stageData[step - 1];
+            const stage = stageData[step];
             blocks = [];
             npes = [];
             for (let col = 0; col < 10; col++) {
@@ -168,7 +168,7 @@
                 if (currentStep < 12) {
                     currentStep++;
                     loadStage(currentStep);
-                    if(currentStep===3){
+                    if(currentStep===2){
                         if(tutorialStep==3)tutorialStep++;
                     }
                 } else {
@@ -201,7 +201,7 @@
                     block.state = 'destroyed';
                     if(tutorialStep==1) tutorialStep++;
                     const touchedNPE = npes.find(npe => npe.x === block.x && npe.y === block.y);
-                    if (touchedNPE && !touchedNPE.found && currentStep > 1) {
+                    if (touchedNPE && !touchedNPE.found && currentStep > 0) {
                         touchedNPE.found = true;
                         npePauseTimer = 1000; // 1 second pause
                         npeToExplode = touchedNPE;
@@ -271,7 +271,11 @@
             // ステージ情報
             ctx.fillStyle = '#0f0';
             ctx.font = '16px Courier';
-            ctx.fillText(`MODULE: ${currentStep}/12`, 10, 20);
+            if(currentStep == 0){
+                ctx.fillText(`TUTORIAL`, 10, 20);
+            }else{
+                ctx.fillText(`MODULE: ${currentStep}/12`, 10, 20);
+            }
 
             if (gameState === 'allClear') {
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
@@ -281,7 +285,7 @@
                 ctx.fillText('All Modules Debugged!', CANVAS_WIDTH / 2 - 150, CANVAS_HEIGHT / 2);
             }
 
-            if (gameState === 'tutorial' && currentStep != 2) {
+            if (gameState === 'tutorial' && currentStep != 1) {
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
                 ctx.fillRect(0, CANVAS_HEIGHT / 2 - 60, CANVAS_WIDTH, 60);
                 ctx.fillStyle = '#0f0';
@@ -291,7 +295,7 @@
                 ctx.textAlign = 'left';
             }
 
-            if(currentStep > 1){
+            if(currentStep > 0){
                 // Draw NPEs
                 npes.forEach((npe, index) => {
                     ctx.beginPath();
@@ -308,7 +312,7 @@
                 });
             }
 
-            if(currentStep > 2){
+            if(currentStep > 1){
                 blocks.forEach(block => {
                     if (isPlayerTouching(block)) {
                         if(block.x == player.x || block.y == player.y){
