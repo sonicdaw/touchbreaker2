@@ -173,7 +173,12 @@
                     }
                 } else {
                     gameState = 'beforeallClear';
-                    npes.forEach(npe => explodeNPE(npe));
+                    npes.forEach(npe => {
+                        if (!npe.exploded) {
+                            explodeNPE(npe);
+                            npe.exploded = true;
+                        }
+                    });
                 }
             }
 
