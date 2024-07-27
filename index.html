@@ -504,6 +504,14 @@
                 !blocks.some(b => b.x === newBlockX && b.y === newBlockY)) {
                 block.x = newBlockX;
                 block.y = newBlockY;
+
+                // NPEが存在する場合、一緒に移動
+                const npeOnBlock = npes.find(npe => npe.x === block.x - dx && npe.y === block.y - dy);
+                if (npeOnBlock) {
+                    npeOnBlock.x = newBlockX;
+                    npeOnBlock.y = newBlockY;
+                }
+
                 player.x += dx;
                 player.y += dy;
             }
