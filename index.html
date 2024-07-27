@@ -244,11 +244,11 @@
             blocks.forEach(block => {
                 const x = (block.x + 1) * CELL_SIZE;
                 const y = (block.y + 1) * CELL_SIZE;
-                ctx.fillStyle = block.state === 'normal' ? '#444' : '#888';
+                ctx.fillStyle = block.state === 'normal' ? '#333' : '#AAA';
                 ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
-                ctx.fillStyle = '#0f0';
+                ctx.fillStyle = block.state === 'normal' ? '#0f0' : '#000';;
                 ctx.font = '10px Courier';
-                ctx.fillText('BUG', x + 5, y + CELL_SIZE / 2);
+                ctx.fillText('BUG', x + 7, y + CELL_SIZE / 2 + 3);
             });
 
             // プレイヤー（点滅するカーソル）
@@ -317,7 +317,7 @@
                         ctx.fillStyle = '#f00';
                         ctx.fill();
                     }
-                    ctx.fillStyle = '#f00';
+                    ctx.fillStyle = npe.found === true ? '#000' : '#f00';
                     ctx.font = '10px Courier';
                     ctx.fillText('NPE', CANVAS_WIDTH - 28 - index * 30, 20);
                 });
