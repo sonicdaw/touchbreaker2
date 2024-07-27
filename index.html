@@ -68,6 +68,7 @@
         let explosions = [];
         let npePauseTimer = 0;
         let npeToExplode = null;
+        let destroyingBlocks = []; // 破壊中のブロックを追跡する新しい配列
 
         const stageData = [
             { data: "000600000000000000000000600000", x: 1, y: 11 },
@@ -201,12 +202,22 @@
                 return explosion.duration > 0;
             });
 
+            // 破壊中のブロックを更新
+            destroyingBlocks = destroyingBlocks.filter(block => {
+                block.destroyTimer--;
+                return block.destroyTimer > 0;
+            });
+
+            // 破壊アニメーションが終了したブロックを削除
+            blocks = blocks.filter(block => !destroyingBlocks.some(destroyingBlock =>
+            destroyingBlock.x === block.x && destroyingBlock.y === block.y));
+
             blocks.forEach(block => {
                 if (isPlayerTouching(block)) {
                     block.state = 'selected';
                     if(tutorialStep==0) tutorialStep++;
                 } else if (block.state === 'selected') {
-                    block.state = 'destroyed';
+                    startDestroyAnimation(block);
                     if(tutorialStep==1) tutorialStep++;
                     const touchedNPE = npes.find(npe => npe.x === block.x && npe.y === block.y);
                     if (touchedNPE && !touchedNPE.found && currentStep > 0) {
@@ -219,6 +230,12 @@
                     }
                 }
             });
+        }
+
+        function startDestroyAnimation(block) {
+            block.state = 'destroying';
+            block.destroyTimer = 50; // アニメーションの長さ（フレーム数）
+            destroyingBlocks.push(block);
         }
 
         function explodeNPE(npe) {
@@ -249,6 +266,11 @@
                 ctx.fillStyle = block.state === 'normal' ? '#0f0' : '#000';;
                 ctx.font = '10px Courier';
                 ctx.fillText('BUG', x + 7, y + CELL_SIZE / 2 + 3);
+            });
+            // 破壊中のブロックを更新
+            destroyingBlocks = destroyingBlocks.filter(block => {
+                drawDestroyingBlock(block);
+                return block.destroyTimer > 0;
             });
 
             // プレイヤー（点滅するカーソル）
@@ -331,6 +353,31 @@
                         }
                     }
                 });
+            }
+        }
+
+        function drawDestroyingBlock(block) {
+            const progress = 1 - (block.destroyTimer / 50); // 0から1の範囲で進行状況を計算
+            const size = CELL_SIZE * (1 - progress);
+            const offset = (CELL_SIZE - size) / 2;
+            const x = (block.x + 1) * CELL_SIZE;
+            const y = (block.y + 1) * CELL_SIZE;
+
+            ctx.fillStyle = `rgba(170, 170, 170, ${1 - progress})`;
+            ctx.fillRect(x + offset, y + offset, size, size);
+
+            // 破片のアニメーション
+            const particleCount = 12;
+            for (let i = 0; i < particleCount; i++) {
+                const angle = (Math.PI * 2 / particleCount) * i;
+                const particleX = x + CELL_SIZE / 2 + Math.cos(angle) * progress * CELL_SIZE;
+                const particleY = y + CELL_SIZE / 2 + Math.sin(angle) * progress * CELL_SIZE;
+                const particleSize = 10 * (1 - progress);
+
+                ctx.beginPath();
+                ctx.fillStyle = `rgba(255, 0, 0, ${1 - progress})`;
+                ctx.arc(particleX, particleY, particleSize, 0, Math.PI * 2);
+                ctx.stroke();
             }
         }
 
