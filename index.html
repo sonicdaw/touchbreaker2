@@ -90,8 +90,11 @@
             "バグに触れると、選択状態になります",
             "離れると、削除して駆除できます",
             "全てのバグを削除してクリアしましょう",
+            "ビッグバグ(NPE)が3つ隠れています", // Step1 1st NPE
+            "NPE は Null Pointer Exception の略です", // Step2 2nd NPE                                            //
+            "3つのNPEを駆除しましょう",                // Step3 3rd NPE
             "バグは押すこともできます",
-            "押すバグ以外で移動できる場所だけ",
+            "押すバグ以外で移動できる範囲まで",
             "中央のバグを押して移動しながら消していこう"
         ];
 
@@ -169,7 +172,7 @@
                     currentStep++;
                     loadStage(currentStep);
                     if(currentStep===2){
-                        if(tutorialStep==3)tutorialStep++;
+                        if(tutorialStep==6)tutorialStep++;
                     }
                 } else {
                     gameState = 'beforeallClear';
@@ -210,6 +213,9 @@
                         touchedNPE.found = true;
                         npePauseTimer = 1000; // 1 second pause
                         npeToExplode = touchedNPE;
+                        if(tutorialStep > 2 && tutorialStep < 6 && currentStep == 1){
+                            tutorialStep++;
+                        }
                     }
                 }
             });
@@ -290,7 +296,7 @@
                 ctx.fillText('All Modules Debugged!', CANVAS_WIDTH / 2 - 150, CANVAS_HEIGHT / 2);
             }
 
-            if (gameState === 'tutorial' && currentStep != 1) {
+            if (gameState === 'tutorial' && (currentStep != 1 || (currentStep == 1 && tutorialStep > 3))) {
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
                 ctx.fillRect(0, CANVAS_HEIGHT / 2 - 60, CANVAS_WIDTH, 60);
                 ctx.fillStyle = '#0f0';
@@ -415,12 +421,12 @@
 
             if (blockAtNewPos && canPushBlock(dx, dy)) {
                 pushBlock(blockAtNewPos, dx, dy);
-                if(tutorialStep==4)tutorialStep++;
+                if(tutorialStep==7)tutorialStep++;
             } else if (canMove(dx, dy)) {
                 player.x = newX;
                 player.y = newY;
                 if(newX > 2 && newX < 7 && newY > 3 && newY < 7){
-                    if(tutorialStep==5)tutorialStep++;
+                    if(tutorialStep==8)tutorialStep++;
                 }
             }
         }
