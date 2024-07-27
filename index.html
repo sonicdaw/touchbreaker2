@@ -158,7 +158,7 @@
             }
 
             if (gameState === 'tutorial') {
-                if (tutorialStep >= tutorialMessages.length - 1) {
+                if (tutorialStep >= tutorialMessages.length) {
                     gameState = 'playing';
                 }
             }
@@ -425,9 +425,13 @@
             } else if (canMove(dx, dy)) {
                 player.x = newX;
                 player.y = newY;
-                if(newX > 2 && newX < 7 && newY > 3 && newY < 7){
-                    if(tutorialStep==8)tutorialStep++;
-                }
+            }
+
+            if(newX > 2 && newX < 7 && newY > 3 && newY < 7){
+                if(tutorialStep==8)tutorialStep++;
+            }
+            if(newX > 2 && newX < 7 && newY == 5){
+                if(tutorialStep==9)tutorialStep++;
             }
         }
 
