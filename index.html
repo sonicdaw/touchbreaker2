@@ -90,6 +90,8 @@
         let audioLoaded = false;
         let audioContext;
         let audioBuffers = {};
+        let flickAnimation = null;
+        let flickDirection = 'right'; // 新しい変数を追加して、現在のフリック方向を追跡
 
         const stageData = [
             { data: "0000E00004004004004000000E0000", x: 1, y: 11 },
@@ -145,6 +147,7 @@
             canvas.addEventListener('touchend', handleTouchEnd, false);
 
             document.getElementById('retryButton').addEventListener('click', retryStage);
+            startFlickAnimation();
             gameLoop();
 
             document.getElementById('audioButton').addEventListener('click', toggleAudio);
@@ -278,6 +281,8 @@
                 explodeNPE(npe);
             });
             npesToExplode = []; // Reset the array after processing
+
+            updateFlickAnimation();
         }
 
         function startDestroyAnimation(block) {
@@ -295,6 +300,38 @@
                 pauseTimer: 100,
                 duration: 30
             });
+        }
+
+        function startFlickAnimation() {
+            flickAnimation = {
+                startX: CELL_SIZE / 2,
+                startY: CELL_SIZE / 2,
+                endX: CELL_SIZE * 2,
+                endY: CELL_SIZE / 2,
+                progress: 0,
+            };
+            flickDirection = 'right';
+        }
+
+        function updateFlickAnimation() {
+            flickAnimation.progress += 0.02;
+            if (flickAnimation.progress >= 1) {
+                flickAnimation.progress = 0;
+                // フリック方向を交互に切り替え
+                if (flickDirection === 'up') {
+                    flickAnimation.startX = CELL_SIZE / 2;
+                    flickAnimation.startY = CELL_SIZE / 2;
+                    flickAnimation.endX = CELL_SIZE * 2;
+                    flickAnimation.endY = CELL_SIZE / 2;
+                    flickDirection = 'right';
+                } else {
+                    flickAnimation.startX = CELL_SIZE / 2;
+                    flickAnimation.startY = CELL_SIZE / 2;
+                    flickAnimation.endX = CELL_SIZE / 2;
+                    flickAnimation.endY = CELL_SIZE * -2;
+                    flickDirection = 'up';
+                }
+            }
         }
 
         function draw() {
@@ -450,6 +487,24 @@
                 ctx.fillText('Completed!', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
                 ctx.textAlign = 'left';
             }
+
+            if (gameState === 'tutorial' && tutorialStep === 0) {
+                drawFlickAnimation();
+            }
+        }
+
+        function drawFlickAnimation() {
+            const x = (player.x + 1) * CELL_SIZE + flickAnimation.startX + (flickAnimation.endX - flickAnimation.startX) * flickAnimation.progress;
+            const y = (player.y + 1) * CELL_SIZE + flickAnimation.startY + (flickAnimation.endY - flickAnimation.startY) * flickAnimation.progress;
+
+            ctx.beginPath();
+            ctx.arc(x, y, 10, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.fill();
+
+            ctx.font = '16px Courier';
+            ctx.fillStyle = '#0f0';
+            ctx.fillText('Flick or Cursor Key to move', (player.x + 2) * CELL_SIZE, (player.y + 1) * CELL_SIZE);
         }
 
         function retryNotActive(){
