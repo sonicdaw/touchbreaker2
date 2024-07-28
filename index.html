@@ -158,6 +158,7 @@
             requestAnimationFrame(gameLoop);
         }
 
+        let npesToExplode = []; // 爆発予定のNPEを追跡する新しい配列
         function update(timestamp) {
             if (gameState === 'tutorial') {
                 if (tutorialStep >= tutorialMessages_ja.length) {
@@ -230,16 +231,24 @@
                 } else if (block.state === 'selected') {
                     startDestroyAnimation(block);
                     if(tutorialStep==1) tutorialStep++;
-                    const touchedNPE = npes.find(npe => npe.x === block.x && npe.y === block.y);
-                    if (touchedNPE && !touchedNPE.found && currentStep > 0) {
-                        touchedNPE.found = true;
-                        explodeNPE(touchedNPE);
-                        if(tutorialStep > 2 && tutorialStep < 6 && currentStep == 1){
-                            tutorialStep++;
-                        }
+                    if (currentStep > 0) {
+                        const touchedNPEs = npes.filter(npe => npe.x === block.x && npe.y === block.y && !npe.found);
+                        touchedNPEs.forEach(npe => {
+                            npe.found = true;
+                            npesToExplode.push(npe);
+                            if(tutorialStep > 2 && tutorialStep < 6 && currentStep == 1){
+                                tutorialStep++;
+                            }
+                        });
                     }
                 }
             });
+
+            // Process NPEs to explode
+            npesToExplode.forEach(npe => {
+                explodeNPE(npe);
+            });
+            npesToExplode = []; // Reset the array after processing
         }
 
         function startDestroyAnimation(block) {
