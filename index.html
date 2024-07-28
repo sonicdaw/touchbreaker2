@@ -571,7 +571,7 @@
             if (blockAtNewPos && canPushBlock(dx, dy)) {
                 pushBlock(blockAtNewPos, dx, dy);
                 if(tutorialStep==7)tutorialStep++;
-                playSound('move');
+                playSound('push');
             } else if (canMove(dx, dy)) {
                 player.x = newX;
                 player.y = newY;
@@ -687,10 +687,11 @@
             const audioFiles = {
                 bgm: './sound/Magicalroom_soundeffectlab.mp3',
                 move: './sound/Button38_soundeffectlab.mp3',
+                push: './sound/OpenMenu2_soundeffectlab.mp3',
                 npeExplosion: './sound/Button16_soundeffectlab.mp3',
                 bugDestroy: './sound/Button6_soundeffectlab.mp3',
                 moduleStart: './sound/DataAnalysys_soundeffectlab.mp3',
-                moduleClear: './sound/DecisionButton33_soundeffectlab.mp3',
+                moduleClear: './sound/OpneMenu5_soundeffectlab.mp3',
                 allClear: './sound/BootRobot2_soundeffectlab.mp3'
             };
 
