@@ -71,7 +71,7 @@
         let moduleClearingTime = Date.now();
 
         const stageData = [
-            { data: "0000E00000000000000000000E0000", x: 1, y: 11 },
+            { data: "0000E00004004004004000000E0000", x: 1, y: 11 },
             { data: "0002A80A00A00A00A00A00A02A8000", x: 1, y: 11 },
             { data: "048040000000444444000000040240", x: 10, y: 11 },
             { data: "0000000A03B80000003B80A0000000", x: 5, y: 6 },
@@ -86,7 +86,7 @@
             { data: "000000084008300300008084000000", x: 10, y: 11 }
         ];
 
-        const tutorialMessages = [
+        const tutorialMessages_ja = [
             "壁、バグにそって移動できます",
             "バグに触れると、選択状態になります",
             "離れると、削除して駆除できます",
@@ -97,6 +97,19 @@
             "バグは押すこともできます",
             "押すバグ以外で移動できる範囲まで",
             "中央のバグを押して移動しながら消していこう"
+        ];
+
+        const tutorialMessages_en = [
+            "You can move along walls and bugs",
+            "Touch a bug to select it",
+            "Move away to delete and remove the bug",
+            "Clear the stage by removing all bugs",
+            "Three big bugs (NPE) are hidden",
+            "NPE stands for Null Pointer Exception",
+            "Let's remove all three NPEs",
+            "You can also push bugs",
+            "Push until you can move around the bug",
+            "Push the central bug, move around, and clear bugs"
         ];
 
         function init() {
@@ -147,7 +160,7 @@
 
         function update(timestamp) {
             if (gameState === 'tutorial') {
-                if (tutorialStep >= tutorialMessages.length) {
+                if (tutorialStep >= tutorialMessages_ja.length) {
                     gameState = 'playing';
                 }
             }
@@ -332,21 +345,22 @@
                 let messageY, rectY;
                 if (isPlayerInBottomHalf) {
                     // プレイヤーが下半分にいる場合、メッセージを1/4の位置に表示
-                    rectY = CANVAS_HEIGHT / 4 - 30;
-                    messageY = CANVAS_HEIGHT / 4;
+                    rectY = CANVAS_HEIGHT / 4 - 40;
+                    messageY = CANVAS_HEIGHT / 4 - 10;
                 } else {
                     // プレイヤーが上半分にいる場合、メッセージを下半分に表示
                     // プレイヤーが上半分にいる場合、メッセージを3/4の位置に表示
-                    rectY = (CANVAS_HEIGHT * 3) / 4 - 30;
-                    messageY = (CANVAS_HEIGHT * 3) / 4;
+                    rectY = (CANVAS_HEIGHT * 3) / 4 - 40;
+                    messageY = (CANVAS_HEIGHT * 3) / 4 - 10;
                 }
 
-                ctx.fillRect(0, rectY, CANVAS_WIDTH, 60);
+                ctx.fillRect(0, rectY, CANVAS_WIDTH, 80);
 
                 ctx.fillStyle = '#0f0';
                 ctx.font = '14px Courier';
                 ctx.textAlign = 'center';
-                ctx.fillText(tutorialMessages[tutorialStep], CANVAS_WIDTH / 2, messageY);
+                ctx.fillText(tutorialMessages_ja[tutorialStep], CANVAS_WIDTH / 2, messageY);
+                ctx.fillText(tutorialMessages_en[tutorialStep], CANVAS_WIDTH / 2, messageY + 20);
                 ctx.textAlign = 'left';
             }
 
