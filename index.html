@@ -38,6 +38,14 @@
             display: block;
             margin-top: 5px;
         }
+        #audioButton {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #001a1a;
+            color: #0f0;
+            border: 1px solid #0f0;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -47,6 +55,7 @@
     </div>
     <canvas id="gameCanvas" width="384" height="416"></canvas>
     <button id="retryButton">Retry</button>
+    <button id="audioButton">Audio ON</button>
 
     <script>
         const GRID_WIDTH = 10;
@@ -69,6 +78,11 @@
         let destroyingBlocks = []; // 破壊中のブロックを追跡する新しい配列
         let moduleClearing = false;
         let moduleClearingTime = Date.now();
+
+        let audioEnabled = false;
+        let audioLoaded = false;
+        let audioContext;
+        let audioBuffers = {};
 
         const stageData = [
             { data: "0000E00004004004004000000E0000", x: 1, y: 11 },
@@ -125,6 +139,8 @@
 
             document.getElementById('retryButton').addEventListener('click', retryStage);
             gameLoop();
+
+            document.getElementById('audioButton').addEventListener('click', toggleAudio);
         }
 
         function loadStage(step) {
@@ -150,6 +166,7 @@
                 } while (npes.some(bug => bug.x === randomBlock.x && bug.y === randomBlock.y));
                 npes.push({ x: randomBlock.x, y: randomBlock.y, found: false });
             }
+            playSound('moduleStart');
         }
 
         function gameLoop(timestamp) {
@@ -174,6 +191,7 @@
                 if (blocks.length === 0 && !moduleClearing) {
                     moduleClearing = true;
                     moduleClearingTime = Date.now();
+                    playSound('moduleClear');
                 }
 
                 if (moduleClearing && explosions.length === 0 && destroyingBlocks.length === 0 && Date.now() - moduleClearingTime > 4000) {
@@ -185,6 +203,7 @@
                             if(tutorialStep==6)tutorialStep++;
                         }
                     } else {
+                        playSound('allClear');
                         gameState = 'beforeallClear';
                         npes.forEach(npe => {
                             if (!npe.exploded) {
@@ -209,6 +228,9 @@
             // Update explosions
             explosions = explosions.filter(explosion => {
                 if(explosion.pauseTimer == 0){
+                    if(explosion.duration == 30){
+                        playSound('npeExplosion');
+                    }
                     explosion.duration--;
                 }
                 return explosion.duration > 0;
@@ -255,6 +277,7 @@
             block.state = 'destroying';
             block.destroyTimer = 50; // アニメーションの長さ（フレーム数）
             destroyingBlocks.push(block);
+            playSound('bugDestroy');
         }
 
         function explodeNPE(npe) {
@@ -544,6 +567,7 @@
             } else if (canMove(dx, dy)) {
                 player.x = newX;
                 player.y = newY;
+                playSound('move');
             }
 
             if(newX > 2 && newX < 7 && newY > 3 && newY < 7){
@@ -648,6 +672,73 @@
 
         function isPlayerTouching(block) {
             return Math.abs(player.x - block.x) <= 1 && Math.abs(player.y - block.y) <= 1;
+        }
+
+        function loadAudioFiles() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const audioFiles = {
+                bgm: './sound/Magicalroom_soundeffectlab.mp3',
+                move: './sound/Button38_soundeffectlab.mp3',
+                npeExplosion: './sound/Button16_soundeffectlab.mp3',
+                bugDestroy: './sound/Button6_soundeffectlab.mp3',
+                moduleStart: './sound/DataAnalysys_soundeffectlab.mp3',
+                moduleClear: './sound/DecisionButton33_soundeffectlab.mp3',
+                allClear: './sound/BootRobot2_soundeffectlab.mp3'
+            };
+
+            const loadPromises = Object.entries(audioFiles).map(([key, url]) =>
+                fetch(url)
+                    .then(response => response.arrayBuffer())
+                    .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
+                    .then(audioBuffer => {
+                        audioBuffers[key] = audioBuffer;
+                    })
+            );
+
+            return Promise.all(loadPromises);
+        }
+
+        function playSound(soundName, loop = false) {
+            if (!audioEnabled || !audioBuffers[soundName]) return;
+
+            const source = audioContext.createBufferSource();
+            source.buffer = audioBuffers[soundName];
+            source.connect(audioContext.destination);
+            source.loop = loop;
+            source.start();
+
+            return source;
+        }
+
+        function toggleAudio() {
+            if (!audioLoaded) {
+                const audioButton = document.getElementById('audioButton');
+                audioButton.textContent = 'Loading...';
+                audioButton.disabled = true;
+
+                loadAudioFiles().then(() => {
+                    audioLoaded = true;
+                    audioEnabled = true;
+                    audioButton.textContent = 'Audio OFF';
+                    audioButton.disabled = false;
+                    playSound('bgm', true);
+                }).catch(error => {
+                    console.error('Failed to load audio files:', error);
+                    audioButton.textContent = 'Audio ON';
+                    audioButton.disabled = false;
+                });
+            } else {
+                audioEnabled = !audioEnabled;
+                const audioButton = document.getElementById('audioButton');
+                audioButton.textContent = audioEnabled ? 'Audio OFF' : 'Audio ON';
+
+                if (audioEnabled) {
+                    audioContext.resume();
+                    playSound('bgm', true);
+                } else {
+                    audioContext.suspend();
+                }
+            }
         }
 
         window.onload = init;
