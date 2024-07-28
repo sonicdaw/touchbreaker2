@@ -564,6 +564,7 @@
             if (blockAtNewPos && canPushBlock(dx, dy)) {
                 pushBlock(blockAtNewPos, dx, dy);
                 if(tutorialStep==7)tutorialStep++;
+                playSound('move');
             } else if (canMove(dx, dy)) {
                 player.x = newX;
                 player.y = newY;
