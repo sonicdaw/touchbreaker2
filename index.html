@@ -67,6 +67,8 @@
         let touchStartX, touchStartY;
         let explosions = [];
         let destroyingBlocks = []; // 破壊中のブロックを追跡する新しい配列
+        let moduleClearing = false;
+        let moduleClearingTime = Date.now();
 
         const stageData = [
             { data: "000600000000000000000000600000", x: 1, y: 11 },
@@ -154,21 +156,29 @@
                 if(tutorialStep==2)tutorialStep++;
             }
 
-            if (blocks.length === 0) {
-                if (currentStep < 12) {
-                    currentStep++;
-                    loadStage(currentStep);
-                    if(currentStep===2){
-                        if(tutorialStep==6)tutorialStep++;
-                    }
-                } else {
-                    gameState = 'beforeallClear';
-                    npes.forEach(npe => {
-                        if (!npe.exploded) {
-                            explodeNPE(npe);
-                            npe.exploded = true;
+            if (gameState === 'playing' || gameState === 'tutorial') {
+                if (blocks.length === 0 && !moduleClearing) {
+                    moduleClearing = true;
+                    moduleClearingTime = Date.now();
+                }
+
+                if (moduleClearing && explosions.length === 0 && destroyingBlocks.length === 0 && Date.now() - moduleClearingTime > 4000) {
+                    if (currentStep < 12) {
+                        currentStep++;
+                        loadStage(currentStep);
+                        moduleClearing = false;
+                        if(currentStep===2){
+                            if(tutorialStep==6)tutorialStep++;
                         }
-                    });
+                    } else {
+                        gameState = 'beforeallClear';
+                        npes.forEach(npe => {
+                            if (!npe.exploded) {
+                                explodeNPE(npe);
+                                npe.exploded = true;
+                            }
+                        });
+                    }
                 }
             }
 
@@ -348,6 +358,17 @@
                         }
                     }
                 });
+            }
+
+            // Draw module clearing message
+            if (moduleClearing) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(0, CANVAS_HEIGHT / 2 - 30, CANVAS_WIDTH, 60);
+                ctx.fillStyle = '#0f0';
+                ctx.font = '20px Courier';
+                ctx.textAlign = 'center';
+                ctx.fillText('Completed!', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+                ctx.textAlign = 'left';
             }
         }
 
