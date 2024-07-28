@@ -20,8 +20,13 @@
             border: 2px solid #0f0;
             touch-action: none;
         }
-        #retryButton {
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            width: 384px;
             margin-top: 10px;
+        }
+        .game-button {
             padding: 10px 20px;
             background-color: #001a1a;
             color: #0f0;
@@ -54,8 +59,10 @@
         <span class="subtitle">WorldWide System Down</span>
     </div>
     <canvas id="gameCanvas" width="384" height="416"></canvas>
-    <button id="retryButton">Retry</button>
-    <button id="audioButton">Audio ON</button>
+    <div class="button-container">
+        <button id="audioButton" class="game-button">Audio ON</button>
+        <button id="retryButton" class="game-button">Retry</button>
+    </div>
 
     <script>
         const GRID_WIDTH = 10;
@@ -68,7 +75,7 @@
         let player = { x: 0, y: 0 };
         let blocks = [];
         let npes = [];
-        let currentStep = 12;
+        let currentStep = 0;
         let gameState = 'tutorial';
         let cursorBlinkState = true;
         let lastBlinkTime = 0;
