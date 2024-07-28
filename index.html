@@ -68,7 +68,7 @@
         let player = { x: 0, y: 0 };
         let blocks = [];
         let npes = [];
-        let currentStep = 0;
+        let currentStep = 12;
         let gameState = 'tutorial';
         let cursorBlinkState = true;
         let lastBlinkTime = 0;
@@ -434,7 +434,7 @@
             }
 
             // Draw module clearing message
-            if (moduleClearing) {
+            if (moduleClearing && gameState !== 'allClear') {
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
                 ctx.fillRect(0, CANVAS_HEIGHT / 2 - 30, CANVAS_WIDTH, 60);
                 ctx.fillStyle = '#0f0';
