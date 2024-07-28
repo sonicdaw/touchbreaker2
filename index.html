@@ -66,8 +66,6 @@
         let tutorialStep = 0;
         let touchStartX, touchStartY;
         let explosions = [];
-        let npePauseTimer = 0;
-        let npeToExplode = null;
         let destroyingBlocks = []; // 破壊中のブロックを追跡する新しい配列
 
         const stageData = [
@@ -146,18 +144,6 @@
         }
 
         function update(timestamp) {
-            if (npePauseTimer > 0) {
-                npePauseTimer -= 1000 / 60; // Assuming 60 FPS
-                if (npePauseTimer <= 0) {
-                    npePauseTimer = 0;
-                    if (npeToExplode) {
-                        explodeNPE(npeToExplode);
-                        npeToExplode = null;
-                    }
-                }
-                return; // Skip other updates during pause
-            }
-
             if (gameState === 'tutorial') {
                 if (tutorialStep >= tutorialMessages.length) {
                     gameState = 'playing';
@@ -168,7 +154,7 @@
                 if(tutorialStep==2)tutorialStep++;
             }
 
-            if (blocks.length === 0 && npePauseTimer === 0) {
+            if (blocks.length === 0) {
                 if (currentStep < 12) {
                     currentStep++;
                     loadStage(currentStep);
@@ -198,7 +184,9 @@
 
             // Update explosions
             explosions = explosions.filter(explosion => {
-                explosion.duration--;
+                if(explosion.pauseTimer == 0){
+                    explosion.duration--;
+                }
                 return explosion.duration > 0;
             });
 
@@ -222,8 +210,7 @@
                     const touchedNPE = npes.find(npe => npe.x === block.x && npe.y === block.y);
                     if (touchedNPE && !touchedNPE.found && currentStep > 0) {
                         touchedNPE.found = true;
-                        npePauseTimer = 1000; // 1 second pause
-                        npeToExplode = touchedNPE;
+                        explodeNPE(touchedNPE);
                         if(tutorialStep > 2 && tutorialStep < 6 && currentStep == 1){
                             tutorialStep++;
                         }
@@ -243,6 +230,7 @@
                 x: (npe.x + 1) * CELL_SIZE + CELL_SIZE / 2,
                 y: (npe.y + 1) * CELL_SIZE + CELL_SIZE / 2,
                 radius: 0,
+                pauseTimer: 100,
                 duration: 30
             });
         }
@@ -261,11 +249,16 @@
             blocks.forEach(block => {
                 const x = (block.x + 1) * CELL_SIZE;
                 const y = (block.y + 1) * CELL_SIZE;
-                ctx.fillStyle = block.state === 'normal' ? '#333' : '#AAA';
-                ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
-                ctx.fillStyle = block.state === 'normal' ? '#0f0' : '#000';;
-                ctx.font = '10px Courier';
-                ctx.fillText('BUG', x + 7, y + CELL_SIZE / 2 + 3);
+                if (!explosions.some(explosion =>
+                    Math.abs(explosion.x - (x + CELL_SIZE / 2)) < CELL_SIZE &&
+                    Math.abs(explosion.y - (y + CELL_SIZE / 2)) < CELL_SIZE
+                )) {
+                    ctx.fillStyle = block.state === 'normal' ? '#333' : '#AAA';
+                    ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                    ctx.fillStyle = block.state === 'normal' ? '#0f0' : '#000';;
+                    ctx.font = '10px Courier';
+                    ctx.fillText('BUG', x + 7, y + CELL_SIZE / 2 + 3);
+                }
             });
             // 破壊中のブロックを更新
             destroyingBlocks = destroyingBlocks.filter(block => {
@@ -283,23 +276,25 @@
 
             // Draw explosions
             explosions.forEach(explosion => {
-                ctx.beginPath();
-                ctx.arc(explosion.x, explosion.y, explosion.radius, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(255, 0, 0, ${explosion.duration / 60})`;
-                ctx.fill();
-                explosion.radius += (60 - explosion.duration) / 2;
+                if(explosion.pauseTimer > 0){
+                    ctx.beginPath();
+                    ctx.fillStyle = '#f00';
+                    ctx.arc(explosion.x , explosion.y, 13, 0, Math.PI * 2);
+                    ctx.strokeStyle = '#f00';
+                    ctx.fill();
+                    ctx.fillStyle = '#000';
+                    ctx.font = '10px Courier';
+                    ctx.fillText('NPE', explosion.x - 8, explosion.y + 3);
+                    ctx.stroke();
+                    explosion.pauseTimer--;
+                }else{
+                    ctx.beginPath();
+                    ctx.arc(explosion.x, explosion.y, explosion.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 0, 0, ${explosion.duration / 60})`;
+                    ctx.fill();
+                    explosion.radius += (60 - explosion.duration) / 2;
+                }
             });
-
-            // Draw NPE during pause
-            if (npePauseTimer > 0 && npeToExplode) {
-                ctx.beginPath();
-                ctx.arc((npeToExplode.x + 1) * CELL_SIZE + CELL_SIZE / 2 , (npeToExplode.y + 1) * CELL_SIZE + CELL_SIZE / 2, 13, 0, Math.PI * 2);
-                ctx.strokeStyle = '#f00';
-                ctx.stroke();
-                ctx.fillStyle = '#f00';
-                ctx.font = '10px Courier';
-                ctx.fillText('NPE', (npeToExplode.x + 1) * CELL_SIZE + 7, (npeToExplode.y + 1) * CELL_SIZE + CELL_SIZE / 2 + 3);
-            }
 
             // ステージ情報
             ctx.fillStyle = '#0f0';
@@ -460,7 +455,7 @@
         }
 
         function movePlayer(dx, dy) {
-            if (gameState === 'allClear' || npePauseTimer != 0) return;
+            if (gameState === 'allClear') return;
 
             const newX = player.x + dx;
             const newY = player.y + dy;
