@@ -360,6 +360,16 @@
                 });
             }
 
+            // Update retry button appearance
+            const retryButton = document.getElementById('retryButton');
+            if (retryNotActive()) {
+                retryButton.style.opacity = '0.5';
+                retryButton.style.cursor = 'not-allowed';
+            } else {
+                retryButton.style.opacity = '1';
+                retryButton.style.cursor = 'pointer';
+            }
+
             // Draw module clearing message
             if (moduleClearing) {
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
@@ -370,6 +380,10 @@
                 ctx.fillText('Completed!', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
                 ctx.textAlign = 'left';
             }
+        }
+
+        function retryNotActive(){
+            return moduleClearing || gameState === 'allClear' || explosions.length !== 0 || destroyingBlocks.length !== 0;
         }
 
         function drawDestroyingBlock(block) {
@@ -451,13 +465,15 @@
         }
 
         function retryStage() {
-            loadStage(currentStep);
+            if (!retryNotActive()) {
+                loadStage(currentStep);
+            }
         }
 
         function handleKeyDown(e) {
             if (gameState === 'allClear') return;
 
-            if (e.code === 'KeyR') {
+            if (e.code === 'KeyR' && !retryNotActive()) {
                 // Rキーが押されたらステージをリセット
                 loadStage(currentStep);
                 return;
@@ -476,7 +492,7 @@
         }
 
         function movePlayer(dx, dy) {
-            if (gameState === 'allClear') return;
+            if (gameState === 'allClear' || moduleClearing) return;
 
             const newX = player.x + dx;
             const newY = player.y + dy;
