@@ -71,7 +71,7 @@
         let moduleClearingTime = Date.now();
 
         const stageData = [
-            { data: "000600000000000000000000600000", x: 1, y: 11 },
+            { data: "0000E00000000000000000000E0000", x: 1, y: 11 },
             { data: "0002A80A00A00A00A00A00A02A8000", x: 1, y: 11 },
             { data: "048040000000444444000000040240", x: 10, y: 11 },
             { data: "0000000A03B80000003B80A0000000", x: 5, y: 6 },
@@ -323,13 +323,30 @@
                 ctx.fillText('All Modules Debugged!', CANVAS_WIDTH / 2 - 150, CANVAS_HEIGHT / 2);
             }
 
+            // Draw tutorial message
             if (gameState === 'tutorial' && (currentStep != 1 || (currentStep == 1 && tutorialStep > 3))) {
+                const playerY = (player.y + 1) * CELL_SIZE; // プレイヤーのY座標（ピクセル）
+                const isPlayerInBottomHalf = playerY > CANVAS_HEIGHT / 2;
+
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-                ctx.fillRect(0, CANVAS_HEIGHT / 2 - 60, CANVAS_WIDTH, 60);
+                let messageY, rectY;
+                if (isPlayerInBottomHalf) {
+                    // プレイヤーが下半分にいる場合、メッセージを1/4の位置に表示
+                    rectY = CANVAS_HEIGHT / 4 - 30;
+                    messageY = CANVAS_HEIGHT / 4;
+                } else {
+                    // プレイヤーが上半分にいる場合、メッセージを下半分に表示
+                    // プレイヤーが上半分にいる場合、メッセージを3/4の位置に表示
+                    rectY = (CANVAS_HEIGHT * 3) / 4 - 30;
+                    messageY = (CANVAS_HEIGHT * 3) / 4;
+                }
+
+                ctx.fillRect(0, rectY, CANVAS_WIDTH, 60);
+
                 ctx.fillStyle = '#0f0';
                 ctx.font = '14px Courier';
                 ctx.textAlign = 'center';
-                ctx.fillText(tutorialMessages[tutorialStep], CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 30);
+                ctx.fillText(tutorialMessages[tutorialStep], CANVAS_WIDTH / 2, messageY);
                 ctx.textAlign = 'left';
             }
 
