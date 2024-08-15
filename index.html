@@ -93,6 +93,23 @@
         let flickAnimation = null;
         let flickDirection = 'right'; // 新しい変数を追加して、現在のフリック方向を追跡
 
+        function resetGame() {
+            player = { x: 0, y: 0 };
+            blocks = [];
+            npes = [];
+            currentStep = 0;
+            gameState = 'tutorial';
+            cursorBlinkState = true;
+            lastBlinkTime = 0;
+            tutorialStep = 0;
+            explosions = [];
+            destroyingBlocks = []; // 破壊中のブロックを追跡する新しい配列
+            moduleClearing = false;
+            moduleClearingTime = Date.now();
+
+            flickDirection = 'right'; // 新しい変数を追加して、現在のフリック方向を追跡
+        }
+
         const stageData = [
             { data: "0000F00004004004004000000F0000", x: 1, y: 11 },
             { data: "0002A80A00A00A00A00A00A02A8000", x: 1, y: 11 },
@@ -600,6 +617,13 @@
 
             if (e.code === 'KeyR' && !retryNotActive()) {
                 // Rキーが押されたらステージをリセット
+                loadStage(currentStep);
+                return;
+            }
+
+            if (e.code === 'KeyI') {
+                // Iキーが押されたらゲームををリセット
+                resetGame();
                 loadStage(currentStep);
                 return;
             }
